@@ -1,0 +1,4 @@
+---
+name: aws-proto-concourse
+meta:
+  vault_prefix: secret/aws/proto/concourse

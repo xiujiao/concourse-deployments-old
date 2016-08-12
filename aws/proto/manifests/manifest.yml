@@ -1,0 +1,169 @@
+compilation:
+  cloud_properties:
+    availability_zone: us-west-2a
+    instance_type: c4.large
+  network: concourse
+  reuse_compilation_vms: true
+  workers: 3
+director_uuid: 606af3cd-790d-4752-88f2-c1db92732102
+disk_pools: []
+jobs:
+- instances: 1
+  name: haproxy
+  networks:
+  - name: concourse
+    static_ips:
+    - 10.4.1.51
+  resource_pool: haproxy
+  templates:
+  - name: haproxy
+    properties:
+      ha_proxy:
+        backend_port: 8080
+        backend_servers:
+        - 10.4.1.48
+        ssl_pem: null
+    release: cf-haproxy
+- instances: 1
+  name: web
+  networks:
+  - name: concourse
+    static_ips:
+    - 10.4.1.48
+  resource_pool: web
+  templates:
+  - name: tsa
+    properties: {}
+    release: concourse
+  - name: atc
+    properties:
+      basic_auth_password: REDACTED
+      basic_auth_username: concourse
+      bind_port: 8080
+      external_url: https://ci.52.42.175.197.sslip.io
+      postgresql_database: atc
+      publicly_viewable: true
+    release: concourse
+- instances: 1
+  name: db
+  networks:
+  - name: concourse
+  persistent_disk: 10240
+  resource_pool: db
+  templates:
+  - name: postgresql
+    properties:
+      databases:
+      - name: atc
+        password: REDACTED
+        role: atc
+    release: concourse
+  - name: shield-agent
+    release: shield
+- instances: 3
+  name: worker
+  networks:
+  - name: concourse
+  resource_pool: workers
+  templates:
+  - name: groundcrew
+    release: concourse
+  - name: baggageclaim
+    properties: {}
+    release: concourse
+  - name: garden
+    properties:
+      garden:
+        enable_graph_cleanup: true
+        listen_address: 0.0.0.0:7777
+        listen_network: tcp
+    release: garden-runc
+name: aws-proto-concourse
+networks:
+- name: concourse
+  subnets:
+  - cloud_properties:
+      security_groups:
+      - wide-open
+      subnet: subnet-10f36466
+    dns:
+    - 10.4.1.2
+    gateway: 10.4.1.1
+    range: 10.4.1.0/24
+    reserved:
+    - 10.4.1.2 - 10.4.1.3
+    - 10.4.1.4 - 10.4.1.47
+    - 10.4.1.65 - 10.4.1.254
+    static:
+    - 10.4.1.48 - 10.4.1.56
+  type: manual
+properties:
+  shield:
+    agent:
+      daemon_public_key: (( param "Specify the SSH public key from this environment's
+        SHIELD daemon"
+releases:
+- name: garden-runc
+  sha1: 40130e394b3f623b36f322f18097b0d3d6780127
+  url: https://bosh.io/d/github.com/cloudfoundry-incubator/garden-runc-release?v=0.3.0
+  version: 0.3.0
+- name: concourse
+  sha1: c04f2064dc3886f69bafaa81a0c96510ec82c2dc
+  url: https://bosh.io/d/github.com/concourse/concourse?v=1.3.1
+  version: 1.3.1
+- name: cf-haproxy
+  sha1: ac4e52fcd44e0419b21c6faeecbc836043017992
+  url: https://bosh.io/d/github.com/cloudfoundry-community/cf-haproxy-boshrelease?v=8.0.3
+  version: 8.0.3
+- name: shield
+  sha1: 1c8116361740eeadd4af09aa25c99bff1b5fb634
+  url: https://bosh.io/d/github.com/starkandwayne/shield-boshrelease?v=6.3.0
+  version: 6.3.0
+resource_pools:
+- cloud_properties:
+    availability_zone: us-west-2a
+    instance_type: m3.medium
+  name: web
+  network: concourse
+  stemcell:
+    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+    sha1: 13c73b82675742012ba3ded6528524b8f3ce9ec3
+    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.5
+    version: 3262.5
+- cloud_properties:
+    availability_zone: us-west-2a
+    instance_type: m3.medium
+  name: db
+  network: concourse
+  stemcell:
+    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+    sha1: 13c73b82675742012ba3ded6528524b8f3ce9ec3
+    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.5
+    version: 3262.5
+- cloud_properties:
+    availability_zone: us-west-2a
+    instance_type: m4.large
+  name: workers
+  network: concourse
+  stemcell:
+    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+    sha1: 13c73b82675742012ba3ded6528524b8f3ce9ec3
+    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.5
+    version: 3262.5
+- cloud_properties:
+    availability_zone: us-west-2a
+    instance_type: m4.large
+  name: haproxy
+  network: concourse
+  stemcell:
+    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+    sha1: 13c73b82675742012ba3ded6528524b8f3ce9ec3
+    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.5
+    version: 3262.5
+update:
+  canaries: 1
+  canary_watch_time: 30000-180000
+  max_in_flight: 1
+  serial: false
+  update_watch_time: 30000-180000
+

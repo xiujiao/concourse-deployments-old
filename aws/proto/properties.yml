@@ -1,0 +1,6 @@
+---
+meta:
+  availability_zone: "us-west-2a"   # Set this to match your first zone "aws_az1"
+  external_url: "https://ci.52.42.175.197.sslip.io"  # Set as IP address of the Bastion host to allow testing via SSH tunnel
+  ssl_pem: ~
+  #  ssl_pem: (( vault meta.vault_prefix "/web_ui:pem" ))
